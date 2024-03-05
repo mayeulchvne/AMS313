@@ -12,9 +12,9 @@ switch (ref)
     case 0
         kappa = 1; % valeur fixee
     case 1
-        kappa = 1; % parametre 1
+        kappa = 0.5; % parametre 1
     case 2
-        kappa = .1; % parametre 2
+        kappa = 0.5; % parametre 2
     otherwise
         error('la reference doit etre 0,1 ou 2 !!!')
 end

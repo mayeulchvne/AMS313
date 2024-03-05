@@ -18,6 +18,8 @@ Ql = length(LL_decomp);
 NbDof = size(AA_decomp{1},1);
 
 AA = sparse(NbDof,NbDof);
+AA = AA_decomp{1} + mu(1)*AA_decomp{2} + mu(2)*AA_decomp{3};
+
 theta = PARAMETRIC_thetaA(mu);
 
 for q=1:Qa
@@ -25,11 +27,13 @@ for q=1:Qa
 end
 
 LL = sparse(NbDof,1);
-theta = PARAMETRIC_thetaA(mu);
+thetaL = PARAMETRIC_thetaA(mu);
 
-for q=1:Ql
-    LL = LL + theta(q)*LL_decomp{q};
+for q=1:Qa
+    AA = AA + theta(q)*AA_decomp{q};
 end
+
+
 
 UU = AA \ LL;
 

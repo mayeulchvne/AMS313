@@ -1,5 +1,5 @@
 function [ DofNodes, AA, LL, ...
-           MM, DDX, DDY, BB, AA_decomp]  = FE_assemblages(mesh)
+           MM, DDX, DDY, BB, AA_decomp, LL_decomp]  = FE_assemblages(mesh)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FE_assemblages :
 % Assemblage des matrices elements finis.
@@ -86,11 +86,11 @@ for l=1:NbTriangles
           DDY(I,J)= DDY(I,J)+ DYel(i,j);
           switch RefTriangles(l)
               case 0
-                  AA0(I,J) = AA0(I,J) + Ael(i,j);
+                  AA0(I,J) = AA0(I,J) + Kel(i,j);
               case 1
-                  AA1(I,J) = AA1(I,J) + Ael(i,j);
+                  AA1(I,J) = AA1(I,J) + Kel(i,j);
               case 2
-                  AA2(I,J) = AA2(I,J) + Ael(i,j);
+                  AA2(I,J) = AA2(I,J) + Kel(i,j);
           end   
       end
   end
@@ -186,8 +186,14 @@ for i=1:NbNodes
 end
 
 LL = zeros(NbNodes,1);  % vecteur second membre
+LL0 = zeros(NbNodes,1);  % vecteur second membre
+LL1 = zeros(NbNodes,1);  % vecteur second membre
+LL2 = zeros(NbNodes,1);  % vecteur second membre
 PHIr = FE_relevement(mesh); % relevement
 LL = MM*FF + SS1*GG1 + SS2*GG2 + SS4*GG4 + SS5*GG5 - AA*PHIr;
+LL0 = MM*FF + SS1*GG1 + SS2*GG2 + SS4*GG4 + SS5*GG5 - AA0*PHIr;
+LL1 =  - AA1*PHIr;
+LL2 =  - AA2*PHIr;
 
 % Conditions de Dirichlet homogenes sur Gamma3
 % -------------------------------------------
@@ -209,8 +215,12 @@ BB = BB(DofNodes,DofNodes);
 % second membre : 
 % extraction des lignes qui correspondent aux degres de liberte
 LL = LL(DofNodes);
+LL0 = LL0(DofNodes);
+LL1 = LL1(DofNodes);
+LL2 = LL2(DofNodes);
 
 AA_decomp = {AA0;AA1;AA2};
+LL_decomp = {LL0;LL1;LL2};
 
 
 end
