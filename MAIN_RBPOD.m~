@@ -24,8 +24,8 @@ kappa2_max = 1;
 type_plan_experience = 'cartesien'; % 'cartesien' ou 'random'
 sauvegarde_base_reduite = false;    % true pour sauvegarder la base reduite
                                     % PP dans un fichier "PP.mat"
-n1 = 30;
-n2 = 30;
+n1 = 5;
+n2 = 5;
 n_rand = 35;
 
 % -------------------------
@@ -102,13 +102,13 @@ disp(sprintf('Phase Compression elapsed time = %f s', elapsed));
 
 % Courbes de decroissance des valeurs propres
 % ------------------------------------------------
+[VV,vap] = eigs(C,N);
+
 affiche_vap = true;
 if affiche_vap
-    vap = eigs(C,n_train);
-    semilogy(abs(real(vap)))
-end
+    vap = eigs(C,
 
-[VV,vaap] = eigs(C,N);
+
 
 % Troncature et definition d'une base reduite
 % -------------------------------------------

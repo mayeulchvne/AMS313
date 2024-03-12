@@ -12,7 +12,7 @@ switch (ref)
     case 0
         kappa = 1; % valeur fixee
     case 1
-        kappa = 0.5; % parametre 1
+        kappa = 0.25; % parametre 1
     case 2
         kappa = 0.5; % parametre 2
     otherwise
