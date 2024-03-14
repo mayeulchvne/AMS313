@@ -26,7 +26,7 @@ mesh = MESH_build_cartesian(nx, ny);
 
   
 n_trial = 200; 
-N = 4; %valeurs possibles : 4,8,12,16,20,24,28,32
+N = 32; %valeurs possibles : 4,8,12,16,20,24,28,32
 name_PP = strcat('PP_pod_',int2str(N),'.mat');
 load(name_PP)
 name_mu_list = strcat('mu_list_',int2str(N),'.mat');
@@ -58,7 +58,8 @@ fprintf('Erreur base réduite maximale = %e\n',err_br_max)
 fprintf('Erreur base réduite moyenne = %e\n',err_br_moy)
 
 %%%%%%%%%%%%
-convergence_methode = true;
+convergence_methode = false;
+plan_kappa = true;
 
 if convergence_methode
     NN = [];
@@ -89,9 +90,16 @@ if convergence_methode
     end
     semilogy(NN,E_max);
     semilogy(NN,E_moy);
+elseif plan_kappa  
+    F = scatteredInterpolant(mu_list(:,1),mu_list(:,2),err_br);
+    X = linspace(0.1,1,100);
+    Y = linspace(0.1,1,100);
+    Z = log(F({X,Y}));
+    h = gca;
+    surf(X,Y,Z);
+    set(h,'zscale','log');
+    %shading interp
 end
-    
-    
     
     
     
