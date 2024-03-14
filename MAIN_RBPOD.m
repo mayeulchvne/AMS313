@@ -26,7 +26,7 @@ sauvegarde_base_reduite = true;    % true pour sauvegarder la base reduite
                                     % PP dans un fichier "PP.mat"
 n1 = 30;
 n2 = 30;
-n_rand = 35;
+n_rand = 200;
 
 % -------------------------
 % construction du maillage
@@ -93,7 +93,7 @@ disp(' Phase Compression ');
 disp('-------------------');
 tic;
 
-N = 10;
+N = 32;
 
 C = 1/n_train*AllUUs'*BB*AllUUs;
 
@@ -134,8 +134,8 @@ FE_visu(UU_full, mesh, 'fonction de base');
 % -----------------------------------------
 if(sauvegarde_base_reduite)
     disp('Sauvegarde de la base reduite dans le fichier PP_pod.mat');
-    name = strcat('PP_pod_',int2str(n_train),'.mat');
+    name = strcat('PP_pod_',int2str(N),'.mat');
     save(name, 'PP');
-    name = strcat('mu_list_',int2str(n_train),'.mat');
+    name = strcat('mu_list_',int2str(N),'.mat');
     save(name, 'mu_list');
 end
