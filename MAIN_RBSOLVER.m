@@ -25,12 +25,18 @@ mesh = MESH_build_cartesian(nx, ny);
 
 
   
-n_trial = 200; 
+n_trial = 100; 
 N = 32; %valeurs possibles : 4,8,12,16,20,24,28,32
 name_PP = strcat('PP_pod_',int2str(N),'.mat');
 load(name_PP)
-name_mu_list = strcat('mu_list_',int2str(N),'.mat');
-load(name_mu_list)
+%name_mu_list = strcat('mu_list_',int2str(N),'.mat');
+%load(name_mu_list)
+mu_list=[];
+for j=1:n_trial
+    mu = [rand*0.9+0.1,rand*0.9+0.1];
+    mu_list = [mu_list; mu];
+end
+
 
 
 
@@ -67,11 +73,9 @@ if convergence_methode
     E_moy = [];
     for i=1:8
         N = 4*i;
-        NN = [NN,N];
+        NN = [NN;N];
         name_PP = strcat('PP_pod_',int2str(N),'.mat');
         load(name_PP)
-        name_mu_list = strcat('mu_list_',int2str(N),'.mat');
-        load(name_mu_list)
         err_br = zeros(n_trial,1);
         for i=1:n_trial
             mu = mu_list(i,:);
@@ -88,13 +92,12 @@ if convergence_methode
         E_max = [E_max; max(err_br)];
         E_moy = [E_moy; mean(err_br)];
     end
-    semilogy(NN,E_max);
-    semilogy(NN,E_moy);
+    semilogy(NN,E_moy,"-o",NN,E_max,"-o");
 elseif plan_kappa  
     F = scatteredInterpolant(mu_list(:,1),mu_list(:,2),err_br);
     X = linspace(0.1,1,100);
     Y = linspace(0.1,1,100);
-    Z = log(F({X,Y}));
+    Z = abs(real(F({X,Y})));
     h = gca;
     surf(X,Y,Z);
     set(h,'zscale','log');

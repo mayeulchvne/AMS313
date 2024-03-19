@@ -22,11 +22,11 @@ kappa1_max = 1;
 kappa2_min = 0.1;
 kappa2_max = 1;
 type_plan_experience = 'random'; % 'cartesien' ou 'random'
-sauvegarde_base_reduite = true;    % true pour sauvegarder la base reduite
+sauvegarde_base_reduite = false;    % true pour sauvegarder la base reduite
                                     % PP dans un fichier "PP.mat"
-n1 = 30;
-n2 = 30;
-n_rand = 200;
+n1 = 12;
+n2 = 12;
+n_rand = 35;
 
 % -------------------------
 % construction du maillage
@@ -93,7 +93,7 @@ disp(' Phase Compression ');
 disp('-------------------');
 tic;
 
-N = 32;
+N = 10;
 
 C = 1/n_train*AllUUs'*BB*AllUUs;
 
@@ -102,7 +102,7 @@ disp(sprintf('Phase Compression elapsed time = %f s', elapsed));
 
 % Courbes de decroissance des valeurs propres
 % ------------------------------------------------
-affiche_vap = false;
+affiche_vap = true;
 if affiche_vap
     vap = eigs(C,n_train);
     semilogy(abs(real(vap)))
@@ -123,11 +123,16 @@ for i=1:N
 end
 
 %visualisation des premières fonctions de base (Q 2.4)
-visualisation = true;
-j = 1;
-UU = PP(:,j);  %j-ème fonction de base
-UU_full = FE_add_Dirichlet_DoFs( UU, mesh , DofNodes);
-FE_visu(UU_full, mesh, 'fonction de base');
+visualisation = false;
+if visualisation
+    for j=1:5
+        UU = PP(:,j);  %j-ème fonction de base
+        UU_full = FE_add_Dirichlet_DoFs( UU, mesh , DofNodes);
+        name = strcat(int2str(j),'-ème fonction de base');
+        FE_visu(UU_full, mesh, name);
+    end
+end
+
 
 
 % Sauvergarde de la base reduite construite
