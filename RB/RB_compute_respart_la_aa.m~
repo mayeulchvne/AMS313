@@ -21,13 +21,18 @@ function [Respart_la, Respart_aa] = RB_compute_respart_la_aa(AA_decomp,LL_decomp
 % --------------------------
 Qa = length(AA_decomp);
 Ql = length(LL_decomp);
-[NbNodes,N] = size(PP);
+N = size(PP,2);
 
 % calcul des representants de Riesz
 % ---------------------------------
+LL_hat_decomp = cell(1,Ql);
+for q=1:Ql
+    LL_hat_decomp{q} = BB \ LL_decomp{q};
+end
+
 BAP = cell(1,Qa);
 for i=1:Qa
-    BAP{i} = zeros(NbNodes,N);
+    BAP{i} = zeros(size(BB),N);
     for j=1:N
         BAP{i}(:,j) = BB \ (AA_decomp{i}*PP(:,j));
     end
@@ -45,6 +50,7 @@ end
 % calcul des interactions a-a
 % ---------------------------
 Respart_aa = cell(Qa,Qa);
+
 for q=1:Qa
     for k=q:Qa
         Respart_aa{q,k} = PP'*AA_decomp{k}'*BAP{q};
@@ -52,6 +58,8 @@ for q=1:Qa
         Respart_aa{k,q} = Respart_aa{q,k}';
     end
 end
+
+error('RB_compute_respart_la_aa() not yet implemented');
 
 end
 

@@ -25,17 +25,27 @@ Ql = length(theta_l);
 % Contribution des interaction RHS-RHS
 % ------------------------------------
 resnorm2 = 0.0;
-
+for q=1:Ql
+    for k=1:Ql
+        resnorm2 = resnorm2 + theta_l(q)*theta_l(k)*Respart_ll{q,k};
+    end
+end
 
 % Contribution des interaction RHS-LHS
 % ------------------------------------
-
+for q=1:Ql
+    for k=1:Qa
+        resnorm2 = resnorm2 -2*theta_l(q)*theta_a(k)*Xrb'*Respart_la{q,k};
+    end
+end
 
 % Contribution des interaction LHS-LHS
 % ------------------------------------
-
-error('RB_compute_resnorm2() not yet implemented');
-
+for q=1:Qa
+    for k=1:Qa
+        resnorm2 = resnorm2 + theta_a(q)*theta_a(k)*Xrb'*Respart_aa{q,k}*Xrb;
+    end
+end
 
 end
 

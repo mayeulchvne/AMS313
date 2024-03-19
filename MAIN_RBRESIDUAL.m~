@@ -22,49 +22,72 @@ mesh = MESH_build_cartesian(nx, ny);
 
 [ DofNodes, AA_ref, LL_ref,...
       MM, DDX, DDY, BB, AA_decomp, LL_decomp] = FE_assemblages(mesh);
-
+NbNodes = size(DofNodes,1);
 
   
 n_trial = 100; 
-N = 32; %valeurs possibles : 4,8,12,16,20,24,28,32
+N = 8; %valeurs possibles : 4,8,12,16,20,24,28,32
 name_PP = strcat('PP_pod_',int2str(N),'.mat');
 load(name_PP)
-%name_mu_list = strcat('mu_list_',int2str(N),'.mat');
-%load(name_mu_list)
 mu_list=[];
 for j=1:n_trial
     mu = [rand*0.9+0.1,rand*0.9+0.1];
     mu_list = [mu_list; mu];
 end
 
+[Respart_ll] = RB_compute_respart_ll( LL_decomp, BB );
+[Respart_la, Respart_aa] = RB_compute_respart_la_aa(AA_decomp,LL_decomp, PP, BB);
 
+err_res = zeros(n_trial,1);
 
+validation_residu = true;
 
-err_br = zeros(n_trial,1);
+if validation_residu
+    for i=1:n_trial
+        mu = mu_list(i,:);
+    %résidu calcul direct
+    theta_a = PARAMETRIC_thetaA(mu);
+    theta_l = PARAMETRIC_thetaL(mu);
 
-for i=1:n_trial
-    mu = mu_list(i,:);
-    %solution haute fidélité
-    UU_HF = PARAMETRIC_solve( mu, AA_decomp, LL_decomp);
-
-    %solution base réduite
+    Qa = length(theta_a);
+    Ql = length(theta_l);
+    
+    AA = zeros(NbNodes,NbNodes);
+    for i=1:Qa
+        AA = AA + theta_a(i)*AA_decomp{i};
+    end
+    
+    LL = zeros(NbNodes,1);
+    for i=1:Ql
+        LL = LL + theta_l(i)*LL_decomp{i};
+    end
+    
     [ Arb_decomp, Lrb_decomp ] = RB_reduced_decomp(AA_decomp, LL_decomp, PP);
     Xrb = RB_solve(mu, Arb_decomp, Lrb_decomp);
     Urb = PP*Xrb;
     
+    APx = AA*PP*Xrb-LL;
+    y = BB \ APx;
+    res_dir = APx'*y;
+
+    %résidu calcul efficace
+    res_eff = RB_compute_resnorm2(mu, Xrb, Respart_ll, Respart_la, Respart_aa);
+    
     % calcul de l'erreur
-    diff = UU_HF - Urb;
-    err_br(i) = norm(diff);
+    err_res(i) = abs(res_dir-res_eff);
 end
 
-err_br_max = max(err_br);
-err_br_moy = mean(err_br);
+err_res_max = max(err_res);
+err_res_moy = mean(err_res);
 
-fprintf('Erreur base réduite maximale = %e\n',err_br_max)
-fprintf('Erreur base réduite moyenne = %e\n',err_br_moy)
+fprintf('Erreur résidu maximale = %e\n',err_res_max)
+fprintf('Erreur résidu moyenne = %e\n',err_res_moy)
+
+    
+end
 
 %%%%%%%%%%%%
-convergence_methode = true;
+convergence_methode = false;
 plan_kappa = false;
 
 if convergence_methode
@@ -76,7 +99,7 @@ if convergence_methode
         NN = [NN;N];
         name_PP = strcat('PP_pod_',int2str(N),'.mat');
         load(name_PP)
-        err_br = zeros(n_trial,1);
+        err_res = zeros(n_trial,1);
         for i=1:n_trial
             mu = mu_list(i,:);
             %solution haute fidélité
@@ -87,17 +110,17 @@ if convergence_methode
             Urb = PP*Xrb;
             % calcul de l'erreur
             diff = UU_HF - Urb;
-            err_br(i) = norm(diff);
+            err_res(i) = norm(diff);
         end
-        E_max = [E_max; max(err_br)];
-        E_moy = [E_moy; mean(err_br)];
+        E_max = [E_max; max(err_res)];
+        E_moy = [E_moy; mean(err_res)];
     end
-    semilogy(NN,E_moy,"-o",NN,E_max,"-o")
+    semilogy(NN,E_moy,"-o",NN,E_max,"-o");
 elseif plan_kappa  
-    F = scatteredInterpolant(mu_list(:,1),mu_list(:,2),err_br);
+    F = scatteredInterpolant(mu_list(:,1),mu_list(:,2),err_res);
     X = linspace(0.1,1,100);
     Y = linspace(0.1,1,100);
-    Z = log(F({X,Y}));
+    Z = abs(real(F({X,Y})));
     h = gca;
     surf(X,Y,Z);
     set(h,'zscale','log');
