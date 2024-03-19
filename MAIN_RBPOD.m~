@@ -123,13 +123,12 @@ for i=1:N
 end
 
 %visualisation des premières fonctions de base (Q 2.4)
-visualisation = false;
+visualisation = true;
 if visualisation
     for j=1:5
         UU = PP(:,j);  %j-ème fonction de base
         UU_full = FE_add_Dirichlet_DoFs( UU, mesh , DofNodes);
-        name = strcat(int2str(j),'-ème fonction de base');
-        FE_visu(UU_full, mesh, name);
+        FE_visu(UU_full, mesh, 'fonction de base');
     end
 end
 

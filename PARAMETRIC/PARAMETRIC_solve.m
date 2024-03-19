@@ -17,9 +17,21 @@ Ql = length(LL_decomp);
 % taille de l'espace d'approximation Haute fidelite
 NbDof = size(AA_decomp{1},1);
 
+AA = sparse(NbDof,NbDof);
+theta = PARAMETRIC_thetaA(mu);
 
-error('PARAMETRIC_solve() not yet implemented')
+for q=1:Qa
+    AA = AA + theta(q)*AA_decomp{q};
+end
 
+LL = sparse(NbDof,1);
+theta = PARAMETRIC_thetaA(mu);
+
+for q=1:Ql
+    LL = LL + theta(q)*LL_decomp{q};
+end
+
+UU = AA \ LL;
 
 end
 

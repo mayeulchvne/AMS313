@@ -20,7 +20,7 @@ clear all;
 % sont celles definies dans FE_kappa_coeff
 
 avec_AA_decomp = true; 
-avec_LL_decomp = false;
+avec_LL_decomp = true;
 
 % -------------------------
 % construction du maillage

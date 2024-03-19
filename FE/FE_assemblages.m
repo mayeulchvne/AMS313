@@ -1,5 +1,5 @@
 function [ DofNodes, AA, LL, ...
-           MM, DDX, DDY, BB]  = FE_assemblages(mesh)
+           MM, DDX, DDY, BB, AA_decomp, LL_decomp]  = FE_assemblages(mesh)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FE_assemblages :
 % Assemblage des matrices elements finis.
@@ -49,12 +49,17 @@ disp(strcat('Nombre de noeuds = ', num2str(NbNodes)));
 % -----------------------------------------------------------------
 % Note: Le maillage est tel que la reference des triangles de Omega_j est j
 AA = sparse(NbNodes,NbNodes); % matrice de l'operateur -div(K grad)
+AA0 = sparse(NbNodes,NbNodes);
+AA1 = sparse(NbNodes,NbNodes);
+AA2 = sparse(NbNodes,NbNodes);
 KK = sparse(NbNodes,NbNodes); % matrice de rigidite
 MM = sparse(NbNodes,NbNodes); % matrice de masse
 DDX = sparse(NbNodes,NbNodes); % matrice pour la derivee par rapport a X
 DDY = sparse(NbNodes,NbNodes); % matrice pour la derivee par rapport a Y
 % assemblages
-for l=1:NbTriangles
+
+
+for l=1:NbTriangles    
   % Coordonnees des sommets du triangle
   node1_coords = AllNodes(AllTriangles(l,1),:);
   node2_coords = AllNodes(AllTriangles(l,2),:);
@@ -79,9 +84,19 @@ for l=1:NbTriangles
           AA(I,J) = AA(I,J) + Ael(i,j);
           DDX(I,J)= DDX(I,J)+ DXel(i,j);  
           DDY(I,J)= DDY(I,J)+ DYel(i,j);
+          switch RefTriangles(l)
+              case 0
+                  AA0(I,J) = AA0(I,J) + Kel(i,j);
+              case 1
+                  AA1(I,J) = AA1(I,J) + Kel(i,j);
+              case 2
+                  AA2(I,J) = AA2(I,J) + Kel(i,j);
+          end   
       end
   end
 end 
+
+
 
 % matrice du produit scalaire H1
 BB = KK + MM;
@@ -171,8 +186,14 @@ for i=1:NbNodes
 end
 
 LL = zeros(NbNodes,1);  % vecteur second membre
+LL0 = zeros(NbNodes,1);  % vecteur second membre
+LL1 = zeros(NbNodes,1);  % vecteur second membre
+LL2 = zeros(NbNodes,1);  % vecteur second membre
 PHIr = FE_relevement(mesh); % relevement
 LL = MM*FF + SS1*GG1 + SS2*GG2 + SS4*GG4 + SS5*GG5 - AA*PHIr;
+LL0 = MM*FF + SS1*GG1 + SS2*GG2 + SS4*GG4 + SS5*GG5 - AA0*PHIr;
+LL1 =  - AA1*PHIr;
+LL2 =  - AA2*PHIr;
 
 % Conditions de Dirichlet homogenes sur Gamma3
 % -------------------------------------------
@@ -187,9 +208,20 @@ disp(sprintf('Nombre degres de liberte = %i', size(DofNodes,1)));
 
 % extraction des lignes/colonnes qui correspondent aux degres de liberte
 AA = AA(DofNodes,DofNodes);
+AA0 = AA0(DofNodes,DofNodes);
+AA1 = AA1(DofNodes,DofNodes);
+AA2 = AA2(DofNodes,DofNodes);
 BB = BB(DofNodes,DofNodes);
 % second membre : 
 % extraction des lignes qui correspondent aux degres de liberte
 LL = LL(DofNodes);
+LL0 = LL0(DofNodes);
+LL1 = LL1(DofNodes);
+LL2 = LL2(DofNodes);
+
+AA_decomp = {AA0;AA1;AA2};
+LL_decomp = {LL0;LL1;LL2};
+
+
 end
 
