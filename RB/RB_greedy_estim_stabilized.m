@@ -1,8 +1,8 @@
 function [ errlist, selected_mu, PP, Arb_decomp, Lrb_decomp, ...
-           Respart_ll, Respart_la, Respart_aa, NegRes] = RB_greedy( tol, Nmax, Xi, BB, AA_decomp, LL_decomp ) 
+           Rmat, f_parallel, f_perp] = RB_greedy_estim_stabilized( tol, Nmax, Xi, BB, AA_decomp, LL_decomp ) 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RB_offline :
-% Phase offline de la methode base reduite
+% Phase offline de la methode base reduite avec residu stabilise
 %   
 % INPUT * tol: tolerance sur l'erreur d'approximation base reduite
 %       * Nmax: taille maximale de la base reduite
@@ -17,9 +17,9 @@ function [ errlist, selected_mu, PP, Arb_decomp, Lrb_decomp, ...
 %        - Arb_decomp: cellarray des parties (taille N x N) de
 %                      l'operateur reduit
 %        - Lrb_decomp: cellarray des parties (taille N x 1) du second membre reduit 
-%        - Respart_ll: cellarray des scalaires des interations L-L
-%        - Respart_la:  cellarray des vecteurs (taille N x 1) des interations L-A
-%        - Respart_aa: cellarray des matrices (taille N x N) des interations A-A
+%        - Rmat: matrice N*Qa x N*Qa du residu stabilise
+%        - f_parallel:  matrice N*Qa x Ql du residu stabilise
+%        - f_perp:  matrice Ql x Ql du residu stabilise
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -35,27 +35,31 @@ Ql = length(LL_decomp);
 % taille de la base reduite
 N = 0;
 % erreur d'approximation base reduite
-maxres = 1e9;
+maxestim = 1e9;
 % liste des erreur (courbe de convergence)
 errlist = [];
 % matrice de changement de base
 PP = [];
 % modele reduit
-Arb_decomp = cell(Qa,1);
-Lrb_decomp = cell(Ql,1);
+Arb_decomp = cell(1,Qa);
+Lrb_decomp = cell(1,Ql);
 
 % parties du residu independentes du parametre
 % --------------------------------------------
-% interaction rhs-rhs (termes scalaires)
-Respart_ll = cell(Ql,Ql);
-% interaction rhs-lhs (des vecteurs taille N x 1)
-Respart_la = cell(Ql,Qa);
-% interaction rhs-rhs (des matrices taille N x N)
-Respart_aa = cell(Qa,Qa);
+% base XX-orthonormale du sous espace XX^{-1}A_q p_n, q=1,...,Qa et
+% n=1,...,N (taille Nbpt x N*Qa)
+Qmat = [];
+% matrice de changement de base (taille N*Qa x N*Qa)
+Rmat = [];
+% partie du RHS qui appartient au sous espace Range(Qmat), taille Qa*N x Ql
+f_parallel=[]; 
 
 % Precalcul des representant de Riesz associes au second membre:
 % ------------------
-Respart_ll = RB_compute_respart_ll( LL_decomp, BB );
+LL_hat_decomp = cell(Ql,1);
+for q=1:Ql
+    LL_hat_decomp{q} = BB \ LL_decomp{q};
+end
 
 % initialisation
 % --------------
@@ -64,10 +68,9 @@ ind_mu_star = ceil( nb_points/2 );
 mu_star = Xi(ind_mu_star, :);
 selected_mu=[];
 
-NegRes = [];
 % algorithme Greedy
 % ------------------
-while (N < Nmax)&&(maxres > tol)
+while (N < Nmax)&&(maxestim > tol)
     
     % sauvegarde valeur du parametre 
     % -------------------------------
@@ -90,17 +93,15 @@ while (N < Nmax)&&(maxres > tol)
     % mises a jour du solveur RB
     % ---------------------------
     [Arb_decomp, Lrb_decomp] = RB_reduced_decomp(AA_decomp, LL_decomp, PP);
-    [Respart_la, Respart_aa] = RB_update_resparts( PP,BB, AA_decomp,...
-                                        LL_decomp, Respart_la, Respart_aa);
+    [Qmat, Rmat]= RB_update_Qmat_Rmat(N, new_basis_func, BB, AA_decomp, Qmat, Rmat);
+    [f_parallel, f_perp] = RB_update_resparts_stabilized(Qa, BB, Qmat, LL_decomp, LL_hat_decomp,f_parallel);
     %
     % Probleme de maximisation
     % ------------------------
     % trouver le parametre mu_star qui maximise le residu RB
-    [maxres, mu_star, NumberOfNegRes] = RB_argmax_resnorm(Xi, Arb_decomp, Lrb_decomp, ...
-                                       Respart_ll, Respart_la, Respart_aa);
-    disp(sprintf('Current Max Residual = %e', maxres));
-    errlist = [errlist; maxres];
-    NegRes = [NegRes; NumberOfNegRes];
+    [ maxestim, mu_star ] = RB_argmax_estim_stabilized(Xi, Arb_decomp, Lrb_decomp, Rmat, f_parallel, f_perp);
+    disp(sprintf('Current Max Estimator = %e', maxestim));
+    errlist = [errlist; maxestim];
 end
 
 end

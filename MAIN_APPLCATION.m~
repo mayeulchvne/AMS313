@@ -25,15 +25,38 @@ mesh = MESH_build_cartesian(nx, ny);
 NbNodes = size(DofNodes,1);
 
   
-n_trial = 3000; 
+n_trial = 100; 
 N = 8; %valeurs possibles : 4,8,12,16,20,24,28,32
-name_PP = strcat('PP_pod_',int2str(N),'.mat');
+name_PP = strcat('PP_greedy_',int2str(N),'.mat');
 load(name_PP)
 mu_list=[];
 for j=1:n_trial
     mu = [rand*0.9+0.1,rand*0.9+0.1];
     mu_list = [mu_list; mu];
 end
+
+JJ = FE_quantity_of_interest(mesh, DofNodes);
+JJrb = PP'*JJ;
+
+QQ = zeros(n_trial,1);
+
+for i=1:n_trial
+        mu = mu_list(i,:);
+        
+        %calcul solution base réduite
+        [ Arb_decomp, Lrb_decomp ] = RB_reduced_decomp(AA_decomp, LL_decomp, PP);
+        Xrb = RB_solve(mu, Arb_decomp, Lrb_decomp);
+        QQ(i) = JJrb'*Xrb;
+end
+
+
+
+
+
+
+
+
+
 
 [Respart_ll] = RB_compute_respart_ll( LL_decomp, BB );
 [Respart_la, Respart_aa] = RB_compute_respart_la_aa(AA_decomp,LL_decomp, PP, BB);
@@ -80,7 +103,7 @@ if validation_residu
         %calcul erreur norme 
         UU_HF = PARAMETRIC_solve( mu, AA_decomp, LL_decomp);
         diff = UU_HF - Urb;
-        err_br(i) = diff'*BB*diff;
+        err_br(i) = norm(diff);
     end
     err_res_max = max(err_res);
     err_res_moy = mean(err_res);
@@ -90,9 +113,38 @@ if validation_residu
 end
 
 %%%%%%%%%%%%
+convergence_methode = false;
 plan_kappa = true;
 
-if plan_kappa
+
+
+if convergence_methode
+    NN = [];
+    E_max = [];
+    E_moy = [];
+    for i=1:8
+        N = 4*i;
+        NN = [NN;N];
+        name_PP = strcat('PP_pod_',int2str(N),'.mat');
+        load(name_PP)
+        err_res = zeros(n_trial,1);
+        for i=1:n_trial
+            mu = mu_list(i,:);
+            %solution haute fidélité
+            UU_HF = PARAMETRIC_solve( mu, AA_decomp, LL_decomp);
+            %solution base réduite
+            [ Arb_decomp, Lrb_decomp ] = RB_reduced_decomp(AA_decomp, LL_decomp, PP);
+            Xrb = RB_solve(mu, Arb_decomp, Lrb_decomp);
+            Urb = PP*Xrb;
+            % calcul de l'erreur
+            diff = UU_HF - Urb;
+            err_res(i) = norm(diff);
+        end
+        E_max = [E_max; max(err_res)];
+        E_moy = [E_moy; mean(err_res)];
+    end
+    semilogy(NN,E_moy,"-o",NN,E_max,"-o");
+elseif plan_kappa
     err_br = zeros(n_trial,1);
     for i=1:n_trial
         mu = mu_list(i,:);
@@ -103,15 +155,28 @@ if plan_kappa
         Urb = PP*Xrb;
         
         %résidu calcul efficace
-        res(i) = sqrt(abs(RB_compute_resnorm2(mu, Xrb, Respart_ll, Respart_la, Respart_aa)));
+        res(i) = RB_compute_resnorm2(mu, Xrb, Respart_ll, Respart_la, Respart_aa);
         
         %calcul erreur norme 
         UU_HF = PARAMETRIC_solve( mu, AA_decomp, LL_decomp);
         diff = UU_HF - Urb;
-        err_br(i) = sqrt(diff'*BB*diff);
+        err_br(i) = norm(diff);
     end
-    scatter(mu_list(:,1),mu_list(:,2),50,log(res),"fill");
-    scatter(mu_list(:,1),mu_list(:,2),50,log(err_br),"fill");
+    fprintf('plan kappa \n');
+    Fres = scatteredInterpolant(mu_list(:,1),mu_list(:,2),res);
+    fprintf('interpolation résidus \n');
+    Fnor = scatteredInterpolant(mu_list(:,1),mu_list(:,2),err_br);
+    fprintf('interpolation normes \n');
+    alpha = res/err_br;
+    X = linspace(0.1,1,100);
+    Y = linspace(0.1,1,100);
+    Zres = abs(real(Fres({X,Y})));
+    Znor = abs(real(Fnor({X,Y})));
+    h = gca;
+    surf(X,Y,Zres)
+    surf(X,Y,Znor)
+    set(h,'zscale','log');
+    %shading interp
 end
     
     

@@ -1,4 +1,4 @@
-function [ maxresnorm, mu_star ] = RB_argmax_resnorm_stabilized(Xi, Arb_decomp, Lrb_decomp, Rmat, f_parallel, f_perp)
+function [ maxestim, mu_star ] = RB_argmax_estim_stabilized(Xi, Arb_decomp, Lrb_decomp, Rmat, f_parallel, f_perp)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RB_argmax_resnorm_stabilized :
 % trouver le parametre qui maximise la norme du residu stabilise
@@ -20,23 +20,24 @@ function [ maxresnorm, mu_star ] = RB_argmax_resnorm_stabilized(Xi, Arb_decomp, 
 nb_points = size(Xi, 1);
 
 mu_star = Xi(1,:);
-maxresnorm = 0;
+maxestim = 0;
 
 NumberOfNegRes = 0;
 
 for i=1:nb_points
         mu = Xi(i,:);
+        alpha = min(mu(1),mu(2))/2;
         %calcul solution base réduite
         Xrb = RB_solve(mu, Arb_decomp, Lrb_decomp);
         %résidu calcul efficace
-        res2 = RB_compute_resnorm2_stabilized(mu, Xrb,Rmat, f_parallel, f_perp);
+        res2 = abs(RB_compute_resnorm2_stabilized(mu, Xrb,Rmat, f_parallel, f_perp));
         
-        if (res2 > maxresnorm)
-            maxresnorm = sqrt(res2);
+        estim = sqrt(res2)/alpha;
+        
+        if (estim > maxestim)
+            maxestim = estim;
             mu_star = mu;
-        elseif (res2<0)
-            NumberOfNegRes = NumberOfNegRes+1;
-        end
+
 end
 
 end

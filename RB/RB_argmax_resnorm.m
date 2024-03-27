@@ -1,4 +1,4 @@
-function [ maxresnorm, mu_star ] = RB_argmax_resnorm(Xi, Arb_decomp, Lrb_decomp, ...
+function [ maxresnorm, mu_star, NumberOfNegRes ] = RB_argmax_resnorm(Xi, Arb_decomp, Lrb_decomp, ...
                                        Respart_ll, Respart_la, Respart_aa)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RB_argmax_resnorm :
@@ -19,7 +19,25 @@ function [ maxresnorm, mu_star ] = RB_argmax_resnorm(Xi, Arb_decomp, Lrb_decomp,
 % nombre de points espace des parametres
 n_train= size(Xi, 1);
 
-error('RB_argmax_resnorm() not yet implemented');
+mu_star = Xi(1,:);
+maxresnorm = 0;
+
+NumberOfNegRes = 0;
+
+for i=1:n_train
+        mu = Xi(i,:);
+        %calcul solution base réduite
+        Xrb = RB_solve(mu, Arb_decomp, Lrb_decomp);
+        %résidu calcul efficace
+        res2 = RB_compute_resnorm2(mu, Xrb, Respart_ll, Respart_la, Respart_aa);
+        
+        if (res2 > maxresnorm)
+            maxresnorm = sqrt(res2);
+            mu_star = mu;
+        elseif (res2<0)
+            NumberOfNegRes = NumberOfNegRes+1;
+        end
+end
 
 end
 

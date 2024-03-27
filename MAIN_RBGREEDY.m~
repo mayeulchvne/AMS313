@@ -21,7 +21,7 @@ kappa1_min = 0.1;
 kappa1_max = 1;
 kappa2_min = 0.1;
 kappa2_max = 1;
-classical_or_stabilized = 'new_estim'; % residu 'classical' ou 'stabilized' ou 'new_estim'
+classical_or_stabilized = 'stabilized'; % residu 'classical' ou 'stabilized' ou 'new_estim'
 type_plan_entrainement = 'cartesien'; % 'cartesien' ou 'random'
 sauvegarde_base_reduite = false;    % true pour sauvegarder la base reduite
                                     % PP dans un fichier "PP.mat"
